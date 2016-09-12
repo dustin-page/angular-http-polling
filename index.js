@@ -22,7 +22,7 @@ function pollingService($http, $timeout) {
         retries: 50,
         delay: 100,
         retryOnError: true,
-        timeout: null,
+        timeout: false,
         successRange: [200, 201],
         errorRange: [400, 599]
     }
