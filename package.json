@@ -1,0 +1,29 @@
+{
+  "name": "angular-http-polling",
+  "version": "1.0.0",
+  "description": "An AngularJS service that allows for continuously polling an remote server.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/successacademycharterschools/angular-http-polling.git"
+  },
+  "keywords": [
+    "angularjs",
+    "service",
+    "poll",
+    "long-polling"
+  ],
+  "author": "Success Academy Charter Schools",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/successacademycharterschools/angular-http-polling/issues"
+  },
+  "homepage": "https://github.com/successacademycharterschools/angular-http-polling#readme",
+  "devDependencies": {
+    "karma": "^1.3.0",
+    "karma-jasmine": "^0.1.6"
+  }
+}
