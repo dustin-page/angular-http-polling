@@ -2,6 +2,7 @@
 // Generated on Mon Sep 12 2016 11:16:53 GMT-0400 (EDT)
 
 module.exports = function(config) {
+
   config.set({
 
     // base path that will be used to resolve all patterns (eg. files, exclude)
@@ -10,12 +11,13 @@ module.exports = function(config) {
 
     // frameworks to use
     // available frameworks: https://npmjs.org/browse/keyword/karma-adapter
-    frameworks: ['jasmine'],
+    frameworks: ['wiredep','jasmine'],
 
 
     // list of files / patterns to load in the browser
     files: [
-      'test/**/*.spec.js'
+      'index.js',
+      'test/**/*.js'
     ],
 
 
@@ -64,6 +66,12 @@ module.exports = function(config) {
 
     // Concurrency level
     // how many browser should be started simultaneous
-    concurrency: Infinity
+    concurrency: Infinity,
+
+    wiredep: {
+        dependencies: true,
+        devDependencies: true
+    }
+
   })
 }

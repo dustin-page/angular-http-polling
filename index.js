@@ -1,12 +1,10 @@
+
 /* Initializes module */
 angular.module("ngHTTPPoll",[])
     .service("$httpoll",pollingService)
 
-
-
-
 /* Polling service */
-function pollingService($http, $timeout, HTTP_METHODS, POLLING_DEFAULTS) {
+function pollingService($http, $timeout) {
 
     var poller = {};
     var userDefaults = {};
@@ -15,7 +13,7 @@ function pollingService($http, $timeout, HTTP_METHODS, POLLING_DEFAULTS) {
         delete: {body: false},
         get: {body: false},
         jsonp: {body: false},
-        patch: {body: true}
+        patch: {body: true},
         post: {body: true},
         put: {body: true}
     };
@@ -69,11 +67,11 @@ function pollingService($http, $timeout, HTTP_METHODS, POLLING_DEFAULTS) {
             .then(function(response){
                 if (response.status >= config.successRange[0] &&
                     response.status <= config.successRange[1]) {
-                    return JSON.parse(response.data);
+                    return response.data;
                 } else if (response.status >= config.errorRange[0] &&
                            response.status <= config.errorRange[1]) {
                     throw response;
-                }
+                } else {
                     return delayedPoll();
                 }
             }).catch(function(response){
@@ -96,11 +94,11 @@ function pollingService($http, $timeout, HTTP_METHODS, POLLING_DEFAULTS) {
     }
 
     /* formats a remote API call via the angular $http service */
-    function $httpCall = function (httpMethod, url, data, config) {
+    function $httpCall (httpMethod, url, data, config) {
         var hasBody = HTTP_METHODS[httpMethod].body;
         var arg1 = hasBody ? data : config;
         var arg2 = hasBody ? config : null;
-        $http[httpMethod](url, arg1, arg2)
+        return $http[httpMethod](url, arg1, arg2);
     }
 
     /* generates a config object using defaults and global config settings\

@@ -23,9 +23,13 @@
   },
   "homepage": "https://github.com/successacademycharterschools/angular-http-polling#readme",
   "devDependencies": {
+    "browserify": "^13.1.0",
     "karma": "^1.3.0",
+    "karma-browserify": "^5.1.0",
     "karma-chrome-launcher": "^2.0.0",
     "karma-jasmine": "^0.1.6",
-    "karma-phantomjs-launcher": "^1.0.2"
+    "karma-phantomjs-launcher": "^1.0.2",
+    "karma-wiredep": "^1.0.2",
+    "watchify": "^3.7.0"
   }
 }
