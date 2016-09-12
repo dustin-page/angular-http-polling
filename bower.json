@@ -1,0 +1,26 @@
+{
+  "name": "ng-httpoll",
+  "homepage": "https://github.com/successacademycharterschools/angular-http-polling",
+  "authors": [
+    "Success Academy Charter Schools"
+  ],
+  "description": "An AngularJS service that allows for continuously polling an remote server.",
+  "main": "index.js",
+  "keywords": [
+    "angularjs",
+    "service",
+    "poll",
+    "long-polling"
+  ],
+  "license": "MIT",
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ],
+  "dependencies": {
+    "angular": "angularjs#^1.5.8"
+  }
+}
