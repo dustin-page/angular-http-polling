@@ -7,6 +7,8 @@ angular.module("ngHTTPPoll",[])
 function pollingService($http, $timeout) {
 
     var poller = {};
+    var timeoutIdCounter = 1;
+    var timeoutStatuses = {};
     var userDefaults = {};
 
     var HTTP_METHODS = {
@@ -47,40 +49,54 @@ function pollingService($http, $timeout) {
         return function (url, dataOrConfig, configOrNull) {
             var data = hasBody ? dataOrConfig : null;
             var config = hasBody ? config : dataOrConfig;
-            return poll(httpMethod, url, dataOrConfig, config);
+            return poller.poll(httpMethod, url, dataOrConfig, config);
         }
     }
 
-    /* polls a remote API via provided HTTP method */
-    function poll(httpMethod, url, data, config) {
 
+    /* polls a remote API via provided HTTP method */
+    poller.poll = function (httpMethod, url, data, config) {
         config = getConfig(config);
 
-        var timedOut;
-        if (config.timeout) {
+
+        if (config.timeout && !config.timeoutId) {
+            timeoutIdCounter ++;
+            config.timeoutId = timeoutIdCounter;
             $timeout(function(){
-                timedOut = true;
+                timeoutStatuses[timeoutId] = true;
             }, config.timeout);
         }
 
         return $httpCall(httpMethod, url, data, config)
-            .then(function(response){
-                if (response.status >= config.successRange[0] &&
-                    response.status <= config.successRange[1]) {
-                    return response.data;
-                } else if (response.status >= config.errorRange[0] &&
-                           response.status <= config.errorRange[1]) {
-                    throw response;
-                } else {
-                    return delayedPoll();
-                }
-            }).catch(function(response){
-                if (config.retryOnError) {
-                    return delayedPoll();
-                } else {
-                    return response;
-                }
-            });
+            .then(pollResponse)
+            .catch(pollResponse);
+
+        function pollResponse(response){
+            var timedOut = timeoutStatuses[config.timeoutId];
+            if (config.timeoutId) {
+            }
+            if (inSuccessRange(response.status, config)) {
+                return response.data;
+            }
+
+            if (timedOut ||
+                (inErrorRange(response.status, config) && !config.retryOnError)) {
+                throw response;
+            }
+
+            return delayedPoll(httpMethod, url, data, config);
+        }
+
+    }
+
+    function inErrorRange (status, config) {
+        return status >= config.errorRange[0] &&
+               status <= config.errorRange[1];
+    }
+
+    function inSuccessRange (status, config) {
+        return status >= config.successRange[0] &&
+               status <= config.successRange[1];
     }
 
     /* polls a remote API via provided HTTP method, with a set delay */
@@ -109,7 +125,8 @@ function pollingService($http, $timeout) {
     function getConfig(config) {
         config = config || {};
         var newConfig = {};
-        for (key in POLLING_DEFAULTS) {
+        var keys = Object.keys(POLLING_DEFAULTS).concat(Object.keys(config))
+        keys.forEach(function(key){
             if (angular.isDefined(config[key])) {
                 newConfig[key] = config[key];
             } else if (angular.isDefined(userDefaults[key])) {
@@ -117,7 +134,7 @@ function pollingService($http, $timeout) {
             } else {
                 newConfig[key] = POLLING_DEFAULTS[key];
             }
-        }
+        })
         return newConfig;
     }
 
