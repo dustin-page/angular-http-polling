@@ -27,7 +27,7 @@ angular.module('YourModule',['ngHTTPPoll'])
 
 ### Config Options
 
-`$httpoll` wraps Angular's `$http`, polling the endpoint multiple times, based on the kind of behavior you configure. The API is the same for all `$http` methods, except that it accepts additional config variables:
+`$httpoll` wraps Angular's [`$http`](https://docs.angularjs.org/api/ng/service/$http) methods, polling the endpoint multiple times, based on the kind of behavior you configure. The API is the same for all `$http` methods, except that it accepts additional config variables:
 
 - `retries` [integer] The maximum number of retries that the poller will attempt until it receives a status code in either the `successRange` or `errorRange` _(default: 50)_
 - `delay` [integer] Time (in milliseconds) to delay the next retry after a response is received _(default: 100)_
