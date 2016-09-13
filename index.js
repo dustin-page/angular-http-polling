@@ -30,17 +30,20 @@ function pollingService($http, $timeout) {
     }
 
     /* polls an API based on settings */
-    var poller = function (config) {
-        var config = getConfig(config);
+    var poller = function (config, state) {
+        config = getConfig(config);
+        state = state || {
+            remaining: config.retries
+        };
 
         // allows overriding of the $http service, useful for testing
         var httpProvider = poller.provider || $http;
 
-        if (config.timeout && !config.timeoutId) {
+        if (config.timeout && !state.timeoutId) {
             timeoutIdCounter ++;
-            config.timeoutId = timeoutIdCounter;
+            state.timeoutId = timeoutIdCounter;
             $timeout(function(){
-                timeoutStatuses[timeoutId] = true;
+                timeoutStatuses[state.timeoutId] = true;
             }, config.timeout);
         }
 
@@ -48,7 +51,7 @@ function pollingService($http, $timeout) {
             .then(pollResponse, pollResponse);
 
         function pollResponse(response){
-            var timedOut = timeoutStatuses[config.timeoutId];
+            var timedOut = timeoutStatuses[state.timeoutId];
 
             if (inSuccessRange(response.status, config)) {
                 return response.data;
@@ -59,7 +62,7 @@ function pollingService($http, $timeout) {
                 throw response;
             }
 
-            return delayedPoll(config);
+            return delayedPoll(config, state);
         }
 
     };
@@ -80,13 +83,15 @@ function pollingService($http, $timeout) {
 
     /* generates a single polling function for provided HTTP method */
     function generatePollingFunction(httpMethod, hasBody) {
-        return function (url, dataOrConfig, configOrNull) {
-            var data = hasBody ? dataOrConfig : null;
-            var config = hasBody ? config : dataOrConfig;
-            config = config || {};
-            config.data = data;
-            config.method = httpMethod;
-            config.url = url;
+        return function (url, dataOrConfig, config) {
+            var requestOptions = {url: url, method: httpMethod};
+            if (hasBody) {
+                config = config || {};
+                if (dataOrConfig) requestOptions.data = dataOrConfig;
+            } else {
+                config = dataOrConfig || {};
+            }
+            config = angular.extend({}, config, requestOptions);
             return poller(config);
         }
     }
@@ -103,11 +108,11 @@ function pollingService($http, $timeout) {
     }
 
     /* polls a remote API via provided HTTP method, with a set delay */
-    function delayedPoll (config) {
-        if (config.retries > 0) {
-            config.retries -= 1;
+    function delayedPoll (config, state) {
+        if (state.remaining > 0) {
+            state.remaining -= 1;
             return $timeout(function(){
-                return poller(config);
+                return poller(config, state);
             }, config.delay)
         }
     }
@@ -119,18 +124,7 @@ function pollingService($http, $timeout) {
             3) Default config settings */
     function getConfig(config) {
         config = config || {};
-        var newConfig = {};
-        var keys = Object.keys(POLLING_DEFAULTS).concat(Object.keys(config))
-        keys.forEach(function(key){
-            if (angular.isDefined(config[key])) {
-                newConfig[key] = config[key];
-            } else if (angular.isDefined(userDefaults[key])) {
-                newConfig[key] = userDefaults[key];
-            } else {
-                newConfig[key] = POLLING_DEFAULTS[key];
-            }
-        })
-        return newConfig;
+        return angular.extend({}, POLLING_DEFAULTS, userDefaults, config)
     }
 
     return poller;
