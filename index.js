@@ -69,7 +69,7 @@ function pollingService($http, $timeout) {
 
     /* generates public methods on the poller for each $http method */
     for (var method in HTTP_METHODS) {
-        var hasBody = !!HTTP_METHODS[method].body;
+        var hasBody = HTTP_METHODS[method].body;
         poller[method] = generatePollingFunction(method, hasBody)
     }
 
