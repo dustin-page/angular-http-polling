@@ -134,6 +134,12 @@ describe('$httpoll service', function () {
                     expectHTTPCount(5)
                 }
             )
+
+            it ('should not mutate the original config object', function() {
+                var config = {retries: 20};
+                var promise = $httpoll[method](route, {}, config);
+                expect(config).toEqual({retries: 20});
+            });
         })
     });
 
