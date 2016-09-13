@@ -55,6 +55,16 @@ $httpoll.get('/some_resource', {retries: 50, delay: 20})
 $httpoll.post('/some_resource', {resource: {...}}, {retryOnError: true})
 ```
 
+### Provider
+
+By default, `$httpoll` uses angular's `$http` service as its provider. However, you may change this using the `provider` method. This is especially useful for mocking requests in testing, but could theoretically be used to integrate another HTTP service provider.
+
+#### Example
+
+```javascript
+$httpoll.provider = mockHttpProviderFunction
+```
+
 
 ## Development and Testing
 

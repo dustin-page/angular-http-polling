@@ -33,6 +33,9 @@ function pollingService($http, $timeout) {
     var poller = function (config) {
         var config = getConfig(config);
 
+        // allows overriding of the $http service, useful for testing
+        var httpProvider = poller.provider || $http;
+
         if (config.timeout && !config.timeoutId) {
             timeoutIdCounter ++;
             config.timeoutId = timeoutIdCounter;
@@ -41,7 +44,7 @@ function pollingService($http, $timeout) {
             }, config.timeout);
         }
 
-        return poller.$http(config)
+        return httpProvider(config)
             .then(pollResponse, pollResponse);
 
         function pollResponse(response){
@@ -60,8 +63,6 @@ function pollingService($http, $timeout) {
         }
 
     };
-
-    poller.$http = $http;
 
     /* generates public methods on the poller for each $http method */
     for (var method in HTTP_METHODS) {

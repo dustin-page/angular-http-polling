@@ -164,10 +164,11 @@ describe('$httpoll service', function () {
     }
 
     function $httpSpy () {
-        spyOn($httpoll,'$http').and.callThrough();
+        $httpoll.provider = $http;
+        spyOn($httpoll,'provider').and.callThrough();
     }
 
     function expectHTTPCount(count){
-        expect($httpoll.$http.calls.count()).toBe(count)
+        expect($httpoll.provider.calls.count()).toBe(count)
     }
 })
