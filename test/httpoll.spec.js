@@ -176,7 +176,9 @@ describe('$httpoll service', function () {
             }
         }
         catch (err) {
-            if (err.message != 'No pending request to flush !') throw err;
+            if (err.message != 'No pending request to flush !') {
+                throw err;
+            }
         }
     }
 
