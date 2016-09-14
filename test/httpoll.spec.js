@@ -27,14 +27,18 @@ describe('$httpoll service', function () {
         })
 
         it ('should only poll once if retries is zero', function () {
-            $httpoll({method: 'get', url: route, retries: 0})
-            flush();
+            var result = $httpoll({method: 'get', url: route, retries: 0});
+            expectCatch(result, function(err){
+                expect(err).toEqual("Polling reached max number of retries")
+            });
             expectHTTPCount(1)
         })
 
         it ('should limit polling by the number of retries', function () {
-            $httpoll({method: 'get', url: route, retries: 3})
-            flush();
+            var result = $httpoll({method: 'get', url: route, retries: 3})
+            expectCatch(result, function(err){
+                expect(err).toEqual("Polling reached max number of retries")
+            });
             expectHTTPCount(4)
         })
 
@@ -46,10 +50,12 @@ describe('$httpoll service', function () {
             }
         )
 
-        it ('should not retry if it receives a status code in the success range',
+        it ('should not retry if it receives a status code in the error range',
             function() {
-                $httpoll({method: 'get', url: route, retryOnError: false})
-                flush();
+                var result = $httpoll({method: 'get', url: route, retryOnError: false});
+                expectCatch(result, function(err){
+                    expect(err).toEqual('HTTP error: 404')
+                })
                 expectHTTPCount(1)
             }
         )
@@ -62,6 +68,7 @@ describe('$httpoll service', function () {
                 errorRange: [500, 599],
                 retryOnError: false
             })
+
             flush();
             expectHTTPCount(5)
         })
@@ -78,15 +85,17 @@ describe('$httpoll service', function () {
         })
 
         it ('should timeout', function() {
-            $httpoll({
+            var result = $httpoll({
                 method: 'get',
                 url: route,
                 timeout: 1000,
                 delay: 1200,
                 retries: 9
             })
-            flush(1000);
-            expectHTTPCount(1)
+            expectCatch(result, function(err){
+                expect(err).toEqual("Polling timed out")
+            });
+            expectHTTPCount(1);
         })
     });
 
@@ -159,19 +168,34 @@ describe('$httpoll service', function () {
             });
     }
 
-    function flush(delay){
+    function flush(){
         try {
             while (true) {
                 $httpBackend.flush();
-                $timeout.flush(delay);
+                if (angular.isDefined()) {
+                } else {
+                    $timeout.flush();
+                }
             }
         }
-        catch (Error) {}
+        catch (err) {
+            if (err.message != 'No pending request to flush !') throw err;
+        }
     }
 
     function $httpSpy () {
         $httpoll.provider = $http;
         spyOn($httpoll,'provider').and.callThrough();
+    }
+
+    function expectCatch(promise, catchExpectation) {
+        var catchCalled;
+        promise.catch(function(err){
+            catchCalled = true;
+            catchExpectation(err);
+        });
+        flush();
+        expect(catchCalled).toBe(true);
     }
 
     function expectHTTPCount(count){
