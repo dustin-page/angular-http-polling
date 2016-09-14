@@ -172,10 +172,7 @@ describe('$httpoll service', function () {
         try {
             while (true) {
                 $httpBackend.flush();
-                if (angular.isDefined()) {
-                } else {
-                    $timeout.flush();
-                }
+                $timeout.flush();
             }
         }
         catch (err) {
