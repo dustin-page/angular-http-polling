@@ -5,7 +5,7 @@ angular.module("ngHTTPPoll",[])
 
 /* Polling service */
 
-function pollingService($http, $timeout) {
+function pollingService($http, $timeout, $q) {
 
     var timeoutIdCounter = 1;
     var timeoutStatuses = {};
@@ -48,21 +48,30 @@ function pollingService($http, $timeout) {
         }
 
         return httpProvider(config)
-            .then(pollResponse, pollResponse);
+            .then(pollResponse, pollResponse)
 
         function pollResponse(response){
-            var timedOut = timeoutStatuses[state.timeoutId];
+
+            if (inErrorRange(response.status, config) && !config.retryOnError) {
+                return $q.reject("HTTP error: " + response.status);
+            }
 
             if (inSuccessRange(response.status, config)) {
                 return response.data;
             }
 
-            if (timedOut ||
-                (inErrorRange(response.status, config) && !config.retryOnError)) {
-                throw response;
+            if (state.remaining <= 0) {
+                return $q.reject('Polling reached max number of retries');
             }
 
-            return delayedPoll(config, state);
+            state.remaining -= 1;
+
+            return $timeout(function(){
+                if (timeoutStatuses[state.timeoutId]) {
+                    return $q.reject("Polling timed out")
+                }
+                return poller(config, state);
+            }, config.delay)
         }
 
     };
@@ -105,16 +114,6 @@ function pollingService($http, $timeout) {
     function inSuccessRange (status, config) {
         return status >= config.successRange[0] &&
                status <= config.successRange[1];
-    }
-
-    /* polls a remote API via provided HTTP method, with a set delay */
-    function delayedPoll (config, state) {
-        if (state.remaining > 0) {
-            state.remaining -= 1;
-            return $timeout(function(){
-                return poller(config, state);
-            }, config.delay)
-        }
     }
 
     /* generates a config object using defaults and global config settings\
