@@ -57,7 +57,7 @@ function pollingService($http, $timeout, $q) {
             }
 
             if (inSuccessRange(response.status, config)) {
-                return response.data;
+                return response;
             }
 
             if (state.remaining <= 0) {

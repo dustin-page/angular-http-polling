@@ -113,7 +113,7 @@ describe('$httpoll service', function () {
                 function () {
                     var promise = $httpoll[method](route);
                     promise.then(function(r){
-                        expect(r).toBe(response);
+                        expect(r.data).toBe(response);
                     })
                     flush();
                     expectHTTPCount(5)
@@ -137,7 +137,7 @@ describe('$httpoll service', function () {
                     var payload = {foo: 'bar'};
                     var promise = $httpoll[method](route, payload);
                     promise.then(function(r){
-                        expect(r).toEqual(payload);
+                        expect(r.data).toEqual(payload);
                     })
                     flush();
                     expectHTTPCount(5)
