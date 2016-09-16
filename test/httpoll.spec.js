@@ -121,13 +121,13 @@ describe('$httpoll service', function () {
                 expectHTTPCount(7);
             })
 
-            it ('should defer to default logic', function () {
+            it ('should use the "default" option defer to default logic', function () {
                 var result = $httpoll({
                     method: 'get',
                     url: route,
                     retries: 9,
                     until: function (response, config, state, actions) {
-                        return actions.pass();
+                        return actions.default();
                     }
                 });
                 expectHTTPCount(5);
@@ -142,7 +142,7 @@ describe('$httpoll service', function () {
                         actions.reConfig({
                             retries: 2
                         });
-                        return actions.pass();
+                        return actions.default();
                     }
                 });
                 expectHTTPCount(3);
