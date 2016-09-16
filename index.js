@@ -27,8 +27,7 @@ function pollingService($http, $timeout, $q) {
         timeout: false,
         successRange: [200, 201],
         errorRange: [400, 599],
-        continue: defaultContinue,
-        until: null
+        until: defaultUntil
     }
 
     /* polls an API based on settings */
@@ -54,9 +53,9 @@ function pollingService($http, $timeout, $q) {
 
         function pollResponse(response){
             try {
-                if ((config.until && !config.until(response, config, state)) ||
-                    config.continue(response, config, state)) {
-
+                if (config.until(response, config, state)) {
+                    return response;
+                } else {
                     state.remaining -= 1;
                     return $timeout(function(){
                         if (timeoutStatuses[state.timeoutId]) {
@@ -64,10 +63,7 @@ function pollingService($http, $timeout, $q) {
                         }
                         return poller(config, state);
                     }, config.delay)
-                } else {
-                    return response;
                 }
-            // allows throwing a custom error from the continue config
             } catch (err) {
                 return $q.reject(err.message);
             }
@@ -125,18 +121,17 @@ function pollingService($http, $timeout, $q) {
         return angular.extend({}, POLLING_DEFAULTS, userDefaults, config)
     }
 
-    function defaultContinue (response, config, state) {
+    function defaultUntil (response, config, state) {
         if (inErrorRange(response.status, config) && !config.retryOnError) {
             throw new Error("HTTP error: " + response.status);
         }
 
-        if (inSuccessRange(response.status, config)) return false;
+        if (inSuccessRange(response.status, config)) return true;
 
         if (state.remaining <= 0) {
             throw new Error('Polling reached max number of retries');
         }
 
-        return true;
     }
 
 
