@@ -35,7 +35,19 @@ angular.module('YourModule',['ngHTTPPoll'])
 - `timeout` [integer] Timeout for polling - no further retries will be attempted. A false-y value means that the poller will never timeout. _(default: false)_
 - `successRange` [array]: A range of HTTP status codes that the poller should interpret as a success _(default: [200, 201])_
 - `errorRange` [array]: A range of HTTP status codes that the poller should interpret as errors _(default: [400, 599])_
-- `until` [function(response, config, state)]: Until fires after every request. Polling will stop when this function returns a truth-y value (or unless polling time exceeds the set `timeout`). An error thrown from within the`until` function will stop polling, and the error's message will be sent to a `catch` function, if defined.
+- `until` [function(response, config, state, actions)]: Until fires after every request. Polling will stop when this function returns a truth-y value (or unless polling time exceeds the set `timeout`). An error thrown from within the`until` function will stop polling, and the error's message will be sent to a `catch` function, if defined.
+
+### Until Parameters
+
+- `response`: The last response from the HTTP provider
+- `config`: The current config values
+- `state`: Gives access to the current state of polling
+    - `retryCount`: The number of retries that have already been performed
+- `actions`:
+    - `default` [function()]: Calls the default `until` logic
+    - `reConfig` [function(config)]: Overrides the config values for future requests
+
+
 
 #### Examples
 

@@ -1,6 +1,7 @@
 describe('$httpoll service', function () {
     var $httpoll, $httpBackend, $http, $timeout, pollingIterations;
     var route = '/';
+    var retries = 5;
 
     beforeEach(module('ngHTTPPoll'));
 
@@ -19,10 +20,7 @@ describe('$httpoll service', function () {
 
     describe('main method', function () {
 
-        var retries;
-
         beforeEach(function(){
-            retries = 5;
             mockPollResponse('get', route, retries, "response");
         })
 
@@ -45,7 +43,7 @@ describe('$httpoll service', function () {
         it ('should retry if it receives a status code in the error range',
             function() {
                 $httpoll({method: 'get', url: route, retryOnError: true })
-                expectHTTPCount(5)
+                expectSuccess()
             }
         )
 
@@ -67,7 +65,7 @@ describe('$httpoll service', function () {
                 errorRange: [500, 599],
                 retryOnError: false
             })
-            expectHTTPCount(5)
+            expectSuccess()
         })
 
         it ('should respect a custom success range', function() {
@@ -92,33 +90,64 @@ describe('$httpoll service', function () {
             expectHTTPCount(1);
         })
 
+        describe('util option', function(){
 
-        it ('should override until if timeout is set', function() {
-            var result = $httpoll({
-                method: 'get',
-                url: route,
-                timeout: 1000,
-                delay: 1200,
-                retries: 9,
-                until: function(){
-                    return false;
-                }
+            it ('should get overriden by timeout', function() {
+                var result = $httpoll({
+                    method: 'get',
+                    url: route,
+                    timeout: 1000,
+                    delay: 1200,
+                    retries: 9,
+                    until: function(){
+                        return false;
+                    }
+                })
+                expectTimeout(result);
+                expectHTTPCount(1);
             })
-            expectTimeout(result);
-            expectHTTPCount(1);
+
+            it ('should continue polling until condition is satisfied', function (){
+                var result = $httpoll({
+                    method: 'get',
+                    url: route,
+                    retries: 9,
+                    until: function (response, config, state) {
+                        return state.retryCount > 5;
+                    }
+                });
+                expectHTTPCount(7);
+            })
+
+            it ('should use the "default" option defer to default logic', function () {
+                var result = $httpoll({
+                    method: 'get',
+                    url: route,
+                    retries: 9,
+                    until: function (response, config, state, actions) {
+                        return actions.default();
+                    }
+                });
+                expectSuccess()
+            });
+
+            it ('should reset config for future requests', function () {
+                var result = $httpoll({
+                    method: 'get',
+                    url: route,
+                    retries: 9,
+                    until: function (response, config, state, actions) {
+                        actions.reConfig({
+                            retries: 2
+                        });
+                        return actions.default();
+                    }
+                });
+                expectHTTPCount(3);
+            })
+
         })
 
-        it ('should continue polling until condition is satisfied', function (){
-            var result = $httpoll({
-                method: 'get',
-                url: route,
-                retries: 9,
-                until: function (response, config, state) {
-                    return state.remaining < 4;
-                }
-            });
-            expectHTTPCount(7);
-        })
     });
 
     /* GET, DELETE, JSONP */
@@ -126,7 +155,6 @@ describe('$httpoll service', function () {
 
         describe (method+' method', function () {
             var response = "response message";
-            var retries = 5;
             beforeEach(function(){
                 mockPollResponse(method, route, retries, response)
             });
@@ -137,7 +165,7 @@ describe('$httpoll service', function () {
                     promise.then(function(r){
                         expect(r.data).toBe(response);
                     })
-                    expectHTTPCount(5)
+                    expectSuccess()
                 }
             );
         });
@@ -147,7 +175,6 @@ describe('$httpoll service', function () {
     ['put','post','patch'].forEach(function(method){
 
         describe (method+' method', function () {
-            var retries = 5;
             beforeEach(function(){
                 mockPollResponse(method, route, retries, "", true)
             });
@@ -160,7 +187,7 @@ describe('$httpoll service', function () {
                     promise.then(function(r){
                         expect(r.data).toEqual(payload);
                     })
-                    expectHTTPCount(5)
+                    expectSuccess()
                 }
             )
 
@@ -226,5 +253,9 @@ describe('$httpoll service', function () {
     function expectHTTPCount(count){
         flush();
         expect($httpoll.provider.calls.count()).toBe(count)
+    }
+
+    function expectSuccess() {
+        expectHTTPCount(retries);
     }
 })
