@@ -111,15 +111,43 @@ describe('$httpoll service', function () {
             expectHTTPCount(1);
         })
 
+
+        it ('should override until if timeout is set', function() {
+            var result = $httpoll({
+                method: 'get',
+                url: route,
+                timeout: 1000,
+                delay: 1200,
+                retries: 9,
+                until: function(){
+                    return false;
+                }
+            })
+            expectTimeout(result);
+            expectHTTPCount(1);
+        })
+
         it ('should continue polling if condition is satisfied', function (){
             var result = $httpoll({
                 method: 'get',
                 url: route,
                 retries: 9,
-                continue: function continueFunction (response, config, state) {
+                continue: function (response, config, state) {
                     return state.remaining > 3;
-                },
-                test: true
+                }
+            });
+            flush();
+            expectHTTPCount(7);
+        })
+
+        it ('should continue polling until condition is satisfied', function (){
+            var result = $httpoll({
+                method: 'get',
+                url: route,
+                retries: 9,
+                until: function (response, config, state) {
+                    return state.remaining < 4;
+                }
             });
             flush();
             expectHTTPCount(7);

@@ -27,7 +27,8 @@ function pollingService($http, $timeout, $q) {
         timeout: false,
         successRange: [200, 201],
         errorRange: [400, 599],
-        continue: defaultContinue
+        continue: defaultContinue,
+        until: null
     }
 
     /* polls an API based on settings */
@@ -53,7 +54,9 @@ function pollingService($http, $timeout, $q) {
 
         function pollResponse(response){
             try {
-                if (config.continue(response, config, state)) {
+                if ((config.until && !config.until(response, config, state)) ||
+                    config.continue(response, config, state)) {
+
                     state.remaining -= 1;
                     return $timeout(function(){
                         if (timeoutStatuses[state.timeoutId]) {
