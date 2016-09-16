@@ -92,33 +92,64 @@ describe('$httpoll service', function () {
             expectHTTPCount(1);
         })
 
+        describe('util option', function(){
 
-        it ('should override until if timeout is set', function() {
-            var result = $httpoll({
-                method: 'get',
-                url: route,
-                timeout: 1000,
-                delay: 1200,
-                retries: 9,
-                until: function(){
-                    return false;
-                }
+            it ('should get overriden by timeout', function() {
+                var result = $httpoll({
+                    method: 'get',
+                    url: route,
+                    timeout: 1000,
+                    delay: 1200,
+                    retries: 9,
+                    until: function(){
+                        return false;
+                    }
+                })
+                expectTimeout(result);
+                expectHTTPCount(1);
             })
-            expectTimeout(result);
-            expectHTTPCount(1);
+
+            it ('should continue polling until condition is satisfied', function (){
+                var result = $httpoll({
+                    method: 'get',
+                    url: route,
+                    retries: 9,
+                    until: function (response, config, state) {
+                        return state.retryCount > 5;
+                    }
+                });
+                expectHTTPCount(7);
+            })
+
+            it ('should defer to default logic', function () {
+                var result = $httpoll({
+                    method: 'get',
+                    url: route,
+                    retries: 9,
+                    until: function (response, config, state, actions) {
+                        return actions.pass();
+                    }
+                });
+                expectHTTPCount(5);
+            });
+
+            it ('should reset config for future requests', function () {
+                var result = $httpoll({
+                    method: 'get',
+                    url: route,
+                    retries: 9,
+                    until: function (response, config, state, actions) {
+                        actions.reConfig({
+                            retries: 2
+                        });
+                        return actions.pass();
+                    }
+                });
+                expectHTTPCount(3);
+            })
+
         })
 
-        it ('should continue polling until condition is satisfied', function (){
-            var result = $httpoll({
-                method: 'get',
-                url: route,
-                retries: 9,
-                until: function (response, config, state) {
-                    return state.remaining < 4;
-                }
-            });
-            expectHTTPCount(7);
-        })
     });
 
     /* GET, DELETE, JSONP */

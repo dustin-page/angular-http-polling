@@ -27,14 +27,14 @@ function pollingService($http, $timeout, $q) {
         timeout: false,
         successRange: [200, 201],
         errorRange: [400, 599],
-        until: defaultUntil
+        until: null
     }
 
     /* polls an API based on settings */
     var poller = function (config, state) {
         config = getConfig(config);
         state = state || {
-            remaining: config.retries
+            retryCount: 0
         };
 
         // allows overriding of the $http service, useful for testing
@@ -52,11 +52,26 @@ function pollingService($http, $timeout, $q) {
             .then(pollResponse, pollResponse)
 
         function pollResponse(response){
+
+            var actions = {
+                // apply default `until` logic
+                pass: function() {
+                    return defaultUntil(response, config, state)
+                },
+                // overrides config for subsequent requests
+                reConfig: function (overrideConfig) {
+                    return config = getConfig(config, overrideConfig);
+                }
+            }
+
             try {
-                if (config.until(response, config, state)) {
+                var untilFunc = config.until || defaultUntil;
+                // deep-copy config prevents overriding config values
+                var untilConfig = angular.copy(config);
+                if (untilFunc(response, config, state, actions)) {
                     return response;
                 } else {
-                    state.remaining -= 1;
+                    state.retryCount += 1;
                     return $timeout(function(){
                         if (timeoutStatuses[state.timeoutId]) {
                             return $q.reject("Polling timed out")
@@ -116,9 +131,12 @@ function pollingService($http, $timeout, $q) {
             1) Provided config settings
             2) User default config settings
             3) Default config settings */
-    function getConfig(config) {
+    function getConfig(config, overrides) {
         config = config || {};
-        return angular.extend({}, POLLING_DEFAULTS, userDefaults, config)
+        overrides = overrides || {};
+
+        return angular.extend({}, POLLING_DEFAULTS, userDefaults,
+                              config, overrides)
     }
 
     function defaultUntil (response, config, state) {
@@ -127,12 +145,11 @@ function pollingService($http, $timeout, $q) {
         }
 
         if (inSuccessRange(response.status, config)) return true;
-
-        if (state.remaining <= 0) {
+        if (state.retryCount >= config.retries) {
             throw new Error('Polling reached max number of retries');
         }
-
     }
+
 
 
     return poller;
