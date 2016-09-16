@@ -44,7 +44,7 @@ angular.module('YourModule',['ngHTTPPoll'])
 - `state`: Gives access to the current state of polling
     - `retryCount`: The number of retries that have already been performed
 - `actions`:
-    - `pass` [function()]: Calls the default `until` logic
+    - `default` [function()]: Calls the default `until` logic
     - `reConfig` [function(config)]: Overrides the config values for future requests
 
 
