@@ -68,7 +68,7 @@ function pollingService($http, $timeout, $q) {
                 var untilFunc = config.until || defaultUntil;
                 // deep-copy config prevents overriding config values
                 var untilConfig = angular.copy(config);
-                if (untilFunc(response, config, state, actions)) {
+                if (untilFunc(response, untilConfig, state, actions)) {
                     return response;
                 } else {
                     state.retryCount += 1;
