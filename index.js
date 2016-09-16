@@ -26,7 +26,8 @@ function pollingService($http, $timeout, $q) {
         retryOnError: true,
         timeout: false,
         successRange: [200, 201],
-        errorRange: [400, 599]
+        errorRange: [400, 599],
+        until: defaultUntil
     }
 
     /* polls an API based on settings */
@@ -51,27 +52,21 @@ function pollingService($http, $timeout, $q) {
             .then(pollResponse, pollResponse)
 
         function pollResponse(response){
-
-            if (inErrorRange(response.status, config) && !config.retryOnError) {
-                return $q.reject("HTTP error: " + response.status);
-            }
-
-            if (inSuccessRange(response.status, config)) {
-                return response;
-            }
-
-            if (state.remaining <= 0) {
-                return $q.reject('Polling reached max number of retries');
-            }
-
-            state.remaining -= 1;
-
-            return $timeout(function(){
-                if (timeoutStatuses[state.timeoutId]) {
-                    return $q.reject("Polling timed out")
+            try {
+                if (config.until(response, config, state)) {
+                    return response;
+                } else {
+                    state.remaining -= 1;
+                    return $timeout(function(){
+                        if (timeoutStatuses[state.timeoutId]) {
+                            return $q.reject("Polling timed out")
+                        }
+                        return poller(config, state);
+                    }, config.delay)
                 }
-                return poller(config, state);
-            }, config.delay)
+            } catch (err) {
+                return $q.reject(err.message);
+            }
         }
 
     };
@@ -125,6 +120,20 @@ function pollingService($http, $timeout, $q) {
         config = config || {};
         return angular.extend({}, POLLING_DEFAULTS, userDefaults, config)
     }
+
+    function defaultUntil (response, config, state) {
+        if (inErrorRange(response.status, config) && !config.retryOnError) {
+            throw new Error("HTTP error: " + response.status);
+        }
+
+        if (inSuccessRange(response.status, config)) return true;
+
+        if (state.remaining <= 0) {
+            throw new Error('Polling reached max number of retries');
+        }
+
+    }
+
 
     return poller;
 
