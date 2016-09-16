@@ -45,7 +45,6 @@ describe('$httpoll service', function () {
         it ('should retry if it receives a status code in the error range',
             function() {
                 $httpoll({method: 'get', url: route, retryOnError: true })
-                flush();
                 expectHTTPCount(5)
             }
         )
@@ -68,8 +67,6 @@ describe('$httpoll service', function () {
                 errorRange: [500, 599],
                 retryOnError: false
             })
-
-            flush();
             expectHTTPCount(5)
         })
 
@@ -80,7 +77,6 @@ describe('$httpoll service', function () {
                 retries: 9,
                 successRange: [201, 299]
             })
-            flush();
             expectHTTPCount(10)
         })
 
@@ -121,7 +117,6 @@ describe('$httpoll service', function () {
                     return state.remaining < 4;
                 }
             });
-            flush();
             expectHTTPCount(7);
         })
     });
@@ -142,7 +137,6 @@ describe('$httpoll service', function () {
                     promise.then(function(r){
                         expect(r.data).toBe(response);
                     })
-                    flush();
                     expectHTTPCount(5)
                 }
             );
@@ -166,7 +160,6 @@ describe('$httpoll service', function () {
                     promise.then(function(r){
                         expect(r.data).toEqual(payload);
                     })
-                    flush();
                     expectHTTPCount(5)
                 }
             )
@@ -231,6 +224,7 @@ describe('$httpoll service', function () {
     }
 
     function expectHTTPCount(count){
+        flush();
         expect($httpoll.provider.calls.count()).toBe(count)
     }
 })
