@@ -92,10 +92,37 @@ describe('$httpoll service', function () {
                 delay: 1200,
                 retries: 9
             })
-            expectCatch(result, function(err){
-                expect(err).toEqual("Polling timed out")
-            });
+            expectTimeout(result);
             expectHTTPCount(1);
+        })
+
+        it ('should override continue if timeout is set', function() {
+            var result = $httpoll({
+                method: 'get',
+                url: route,
+                timeout: 1000,
+                delay: 1200,
+                retries: 9,
+                continue: function(){
+                    return true;
+                }
+            })
+            expectTimeout(result);
+            expectHTTPCount(1);
+        })
+
+        it ('should continue polling if condition is satisfied', function (){
+            var result = $httpoll({
+                method: 'get',
+                url: route,
+                retries: 9,
+                continue: function continueFunction (response, config, state) {
+                    return state.remaining > 3;
+                },
+                test: true
+            });
+            flush();
+            expectHTTPCount(7);
         })
     });
 
@@ -195,6 +222,12 @@ describe('$httpoll service', function () {
         });
         flush();
         expect(catchCalled).toBe(true);
+    }
+
+    function expectTimeout(promise) {
+        expectCatch(promise, function (err){
+            expect(err).toEqual("Polling timed out")
+        })
     }
 
     function expectHTTPCount(count){
