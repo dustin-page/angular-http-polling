@@ -26,17 +26,13 @@ describe('$httpoll service', function () {
 
         it ('should only poll once if retries is zero', function () {
             var result = $httpoll({method: 'get', url: route, retries: 0});
-            expectCatch(result, function(err){
-                expect(err).toEqual("Polling reached max number of retries")
-            });
+            expectMaxRetries(result);
             expectHTTPCount(1)
         })
 
         it ('should limit polling by the number of retries', function () {
             var result = $httpoll({method: 'get', url: route, retries: 3})
-            expectCatch(result, function(err){
-                expect(err).toEqual("Polling reached max number of retries")
-            });
+            expectMaxRetries(result);
             expectHTTPCount(4)
         })
 
@@ -90,7 +86,7 @@ describe('$httpoll service', function () {
             expectHTTPCount(1);
         })
 
-        describe('util option', function(){
+        describe('until option', function(){
 
             it ('should get overriden by timeout', function() {
                 var result = $httpoll({
@@ -147,6 +143,46 @@ describe('$httpoll service', function () {
             })
 
         })
+
+        describe('followRedirect option', function(){
+
+            it ('should follow redirect if Location header present', function () {
+
+                $httpBackend.when('GET', '/redirect')
+                    .respond(function (method, url, data) {
+                        pollingIterations++;
+                        return [302, "Redirect", {Location: route}]
+                    });
+
+                var result = $httpoll({
+                    method: 'get',
+                    url: '/redirect',
+                    retries: 9,
+                    followRedirect: true
+                })
+                expectThen(result, function(response){
+                    expect(response.config.url).toBe(route)
+                })
+                expectSuccess();
+            })
+
+            it ('should not follow redirect without Location header', function () {
+                $httpBackend.when('GET', '/redirect')
+                    .respond(function (method, url, data) {
+                        pollingIterations++;
+                        return [302, "Redirect"]
+                    });
+
+                var result = $httpoll({
+                    method: 'get',
+                    url: '/redirect',
+                    retries: 9,
+                    followRedirect: true
+                })
+
+                expectMaxRetries(result);
+            })
+        });
 
     });
 
@@ -234,6 +270,16 @@ describe('$httpoll service', function () {
         spyOn($httpoll,'provider').and.callThrough();
     }
 
+    function expectThen(promise, thenExpectation) {
+        var thenCalled;
+        promise.then(function(err){
+            thenCalled = true;
+            thenExpectation(err);
+        });
+        flush();
+        expect(thenCalled).toBe(true);
+    }
+
     function expectCatch(promise, catchExpectation) {
         var catchCalled;
         promise.catch(function(err){
@@ -242,6 +288,12 @@ describe('$httpoll service', function () {
         });
         flush();
         expect(catchCalled).toBe(true);
+    }
+
+    function expectMaxRetries(promise) {
+        expectCatch(promise, function(err){
+            expect(err).toEqual("Polling reached max number of retries")
+        });
     }
 
     function expectTimeout(promise) {

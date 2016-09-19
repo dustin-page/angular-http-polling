@@ -27,7 +27,8 @@ function pollingService($http, $timeout, $q) {
         timeout: false,
         successRange: [200, 201],
         errorRange: [400, 599],
-        until: null
+        until: null,
+        followRedirect: false
     }
 
     /* polls an API based on settings */
@@ -139,7 +140,16 @@ function pollingService($http, $timeout, $q) {
                               config, overrides)
     }
 
-    function defaultUntil (response, config, state) {
+    function defaultUntil (response, config, state, actions) {
+        var locationHeader = getHeader("Location", response);
+        if (config.followRedirect && locationHeader) {
+            actions.reConfig({
+                method: "get",
+                url: locationHeader
+            })
+            return false;
+        }
+
         if (inErrorRange(response.status, config) && !config.retryOnError) {
             throw new Error("HTTP error: " + response.status);
         }
@@ -147,6 +157,12 @@ function pollingService($http, $timeout, $q) {
         if (inSuccessRange(response.status, config)) return true;
         if (state.retryCount >= config.retries) {
             throw new Error('Polling reached max number of retries');
+        }
+    }
+
+    function getHeader (header, response) {
+        if (response.headers) {
+            return response.headers(header);
         }
     }
 
