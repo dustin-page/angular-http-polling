@@ -57,7 +57,7 @@ function pollingService($http, $timeout, $q) {
             var actions = {
                 // apply default `until` logic
                 default: function() {
-                    return defaultUntil(response, config, state)
+                    return defaultUntil(response, config, state, actions)
                 },
                 // overrides config for subsequent requests
                 reConfig: function (overrideConfig) {
