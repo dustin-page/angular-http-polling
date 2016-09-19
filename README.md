@@ -29,12 +29,13 @@ angular.module('YourModule',['ngHTTPPoll'])
 
 `$httpoll` wraps Angular's [`$http`](https://docs.angularjs.org/api/ng/service/$http) methods, polling the endpoint multiple times, based on the kind of behavior you configure. The API is the same for `$http`, except that it accepts additional keys in the config object:
 
-- `retries` [integer] The maximum number of retries that the poller will attempt until it receives a status code in either the `successRange` or `errorRange` _(default: 50)_
 - `delay` [integer] Time (in milliseconds) to delay the next retry after a response is received _(default: 100)_
-- `retryOnError` [boolean] Polling continues if an error response is received _(default: true)_
-- `timeout` [integer] Timeout for polling - no further retries will be attempted. A false-y value means that the poller will never timeout. _(default: false)_
-- `successRange` [array]: A range of HTTP status codes that the poller should interpret as a success _(default: [200, 201])_
 - `errorRange` [array]: A range of HTTP status codes that the poller should interpret as errors _(default: [400, 599])_
+- `followRedirect`: If a `Location` header is returned in the HTTP response, subsequent polling will target the address in that header using the `GET` method. Polling will continue regardless of whether the HTTP status code of the original response is within the `successRange` or `errorRange` (default: false)
+- `retries` [integer] The maximum number of retries that the poller will attempt until it receives a status code in either the `successRange` or `errorRange` _(default: 50)_
+- `retryOnError` [boolean] Polling continues if an error response is received _(default: true)_
+- `successRange` [array]: A range of HTTP status codes that the poller should interpret as a success _(default: [200, 201])_
+- `timeout` [integer] Timeout for polling - no further retries will be attempted. A false-y value means that the poller will never timeout. _(default: false)_
 - `until` [function(response, config, state, actions)]: Until fires after every request. Polling will stop when this function returns a truth-y value (or unless polling time exceeds the set `timeout`). An error thrown from within the`until` function will stop polling, and the error's message will be sent to a `catch` function, if defined.
 
 ### Until Parameters
